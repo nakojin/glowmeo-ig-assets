@@ -1,0 +1,229 @@
+// glowmeo — 가을 네일 컬러 릴스 약 22초 (9:16) · 화자 지원 · v7 (v6 + 글자색·가독성: 전부 INK · 본문 500/36 · 크림 글로우)
+// 정본: reports/STORYBOARD-2026-09-08-과장-가을네일-릴스.md §6 · §7
+// 🔴 한글 폰트 — `higgsedit fonts add nail "Noto Sans KR:700" "Noto Sans KR:400" "Noto Serif KR:400"` 은 9KB 서브셋을
+//    받아 와 한글 대부분이 □ 로 나온다(9/8 v1 실측 — 9/6 「node 엔진 탓」은 오진). 등록만 그걸로 하고,
+//    Google Fonts 전체 TTF(구형 UA 로 css2 요청)를 fontTools 로 woff2 로 바꿔 nail/fonts/*.woff2 를 덮어쓴다.
+//    검증은 최종 MP4 프레임에서만 — p.frame 도 같은 폰트라 못 잡는다. 절차 정본: 메모리 higgsedit-video-pipeline.
+// 샌드박스에서: project dir 은 "nail"(sed 로 넣음) · 미디어는 nail/media/ · 렌더 출력은 nail/renders/film.mp4
+// 세이프존: 글자는 x 72–960 · y 140–1600 안에만 (아래 320 · 오른쪽 120 · 위 108 은 IG UI).
+const INK = "#2f2926", MUTED = "#7a6f68", PAPER = "#fffdf9", CANVAS = "#f1ebe4";
+const ACCENT = "#8e3a44";
+const KR = "Noto Sans KR", SERIF = "Noto Serif KR";
+const GLOW = { x: 0, y: 0, blur: 16, color: "rgba(255,253,249,0.9)" }; // 사진 위 글자를 띄우는 옅은 크림 글로우
+const W = 1080, H = 1920, M = 96, CW = 700; // 규칙 F: 글 폭 65%
+
+export default async ({ project }) => {
+  const p = await project({ size: "1080x1920", fps: 30, background: PAPER });
+
+  const c1 = await p.add("media/cut1.mp4");
+  const c3 = await p.add("media/cut3.mp4");
+  const c4 = await p.add("media/cut4.mp4");
+  const c7 = await p.add("media/cut7.mp4");
+  const s5 = await p.add("media/cut5.png");
+  const s6 = [await p.add("media/cut6a.png"), await p.add("media/cut6b.png"), await p.add("media/cut6c.png")];
+
+  // ── 타이포 프리셋 (규칙 A–E) ──
+  const kicker = (t, color = INK, extra = {}) => (
+    <text fontFamily={KR} fontWeight={700} fontSize={26} letterSpacing={8} color={color} shadow={GLOW} {...extra}>{t}</text>
+  );
+  const head = (t, color = INK, size = 100, extra = {}) => (
+    <text fontFamily={SERIF} fontWeight={700} fontSize={size} lineHeight={1.22} letterSpacing={-1} color={color} shadow={GLOW}
+          motion={{ by: "word", from: { y: 30, opacity: 0 }, overlap: 0.62, duration: 0.75, easing: "house" }} {...extra}>
+      {t}
+    </text>
+  );
+  const display = (t, color = INK, size = 200, at = 0.25, extra = {}) => (
+    <text fontFamily={SERIF} fontWeight={700} fontSize={size} lineHeight={1.0} letterSpacing={-4} color={color} shadow={GLOW}
+          animate={popAt(at)} {...extra}>
+      {t}
+    </text>
+  );
+  const body = (t, color = INK, extra = {}) => (
+    <text fontFamily={KR} fontWeight={500} fontSize={36} lineHeight={1.6} color={color} shadow={GLOW} {...extra}>{t}</text>
+  );
+  const hair = (w, color = "rgba(47,41,38,0.35)", at = 0.8) => (
+    <rect x={0} y={0} width={w} height={1} fill={color}
+          animate={[{ property: "scaleX", from: 0, to: 1, at, duration: 0.6, easing: "house" }]} />
+  );
+  const fadeAt = (t, d = 0.5) => [{ property: "opacity", from: 0, to: 1, at: t, duration: d }];
+  const riseAt = (t, d = 0.6) => [
+    { property: "opacity", from: 0, to: 1, at: t, duration: d },
+    { property: "offsetY", from: 22, to: 0, at: t, duration: d, easing: "house" },
+  ];
+  function popAt(t, d = 0.8) {
+    return [
+      { property: "opacity", from: 0, to: 1, at: t, duration: d * 0.6 },
+      { property: "scale", from: 0.97, to: 1, at: t, duration: d, easing: "house" },
+      { property: "offsetY", from: 26, to: 0, at: t, duration: d, easing: "house" },
+    ];
+  }
+  const push = (from, to, dur) => [{ property: "scale", from, to, duration: dur, easing: "linear" }];
+  // 바쁜 컷용 크림 판 — 각진 모서리, 위아래 괘선 (규칙 E)
+  const plate = (y, h) => [
+    <rect x={M - 32} y={y} width={CW + 64} height={h} radius={8} fill="rgba(255,253,249,0.96)"
+          animate={[{ property: "opacity", from: 0, to: 1, duration: 0.35 }]} />,
+    <rect x={M - 32} y={y} width={CW + 64} height={1} fill="rgba(47,41,38,0.25)" />,
+    <rect x={M - 32} y={y + h - 1} width={CW + 64} height={1} fill="rgba(47,41,38,0.25)" />,
+  ];
+
+  let at = 0;
+  const beat = (nodes, dur, name) => { p.compose(nodes, { at, dur, name }); at += dur; };
+
+  // 1. 오프닝 2.8s — 여름 프렌치 손. 빈 곳: 위·왼쪽. 세리프 헤드라인, 산세리프 키커
+  beat(
+    <group name="open" width={W} height={H} x={0} y={0}>
+      <media file={c1} trimStart={1.2} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.05, 2.8)} />
+      <column x={M} y={210} width={500} gap={24}>
+        {kicker("FALL NAIL COLOR", ACCENT, { animate: fadeAt(0.2) })}
+        {head("저장은\n했는데,\n못 고르는 이유", INK, 92)}
+        {hair(120, ACCENT, 1.5)}
+      </column>
+    </group>,
+    2.8, "open");
+
+  // 2. 제각각 2.6s — 디스플레이 비트: 세리프 한 단어, 강조색 (규칙 D)
+  const chips = [
+    { x: 96, y: 1010, rot: -8, fill: "#8e1f2b", t: 0.0 },
+    { x: 420, y: 950, rot: 5, fill: "#7a4a2a", t: 0.15 },
+    { x: 730, y: 1040, rot: -3, fill: "#6b7a3a", t: 0.30 },
+  ];
+  beat(
+    <group name="claim" width={W} height={H} x={0} y={0}>
+      <rect x={0} y={0} width={W} height={H} fill={PAPER} />
+      <column x={M} y={320} width={CW} gap={22}>
+        {kicker("저장한 걸 다시 보면", INK, { animate: fadeAt(0.1) })}
+        {display("제각각", ACCENT, 196, 0.25)}
+        {body("어떤 건 붉고, 어떤 건 갈색이고,\n어떤 건 초록빛이에요", INK, { animate: fadeAt(0.9) })}
+      </column>
+      {chips.map((c) => (
+        <rect x={c.x} y={c.y} width={250} height={330} radius={8} fill={c.fill} rotation={c.rot}
+              animate={[
+                { property: "opacity", from: 0, to: 1, at: c.t + 0.3, duration: 0.4 },
+                { property: "offsetY", from: 140, to: 0, at: c.t + 0.3, duration: 0.6, easing: "house" },
+              ]} />
+      ))}
+    </group>,
+    2.6, "claim");
+
+  // 3. 계열로 나누기 3.6s — 왼쪽 위. 세리프 헤드라인 + 세로 라벨 목록
+  const labels = [
+    { name: "붉은 계열", fill: "#8e1f2b", t: 0.9 },
+    { name: "브라운", fill: "#7a4a2a", t: 1.2 },
+    { name: "초록", fill: "#6b7a3a", t: 1.5 },
+  ];
+  beat(
+    <group name="divide" width={W} height={H} x={0} y={0}>
+      <media file={c3} trimStart={0.5} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.03, 3.6)} />
+      <column x={M} y={420} width={600} gap={22}>
+        {kicker("먼저", INK, { animate: fadeAt(0.1) })}
+        {head("계열로\n나눕니다", INK, 104)}
+      </column>
+      {labels.map((l, i) => (
+        <group name={"label-" + i} width={300} height={68} x={M} y={770 + i * 84}
+               animate={riseAt(l.t, 0.5)}>
+          <rect x={0} y={0} width={300} height={68} radius={8} fill="rgba(255,253,249,0.94)" />
+          <rect x={22} y={22} width={24} height={24} radius={12} fill={l.fill} />
+          <text x={64} y={15} width={220} height={40} fontFamily={KR} fontWeight={700}
+                fontSize={28} letterSpacing={1} color={INK}>
+            {l.name}
+          </text>
+        </group>
+      ))}
+      <column x={M} y={1050} width={600} gap={0}>
+        {body("그다음에 밝기와 광택을 비교해요", INK, { animate: fadeAt(2.1) })}
+      </column>
+    </group>,
+    3.6, "divide");
+
+  // 4. 기준은 옷 3.4s — 왼쪽 위 벽. 디스플레이 단어 「옷」 세리프
+  beat(
+    <group name="criterion" width={W} height={H} x={0} y={0}>
+      <media file={c4} trimStart={0.3} x={0} y={0} width={W} height={H} fit="cover" />
+      <column x={M} y={190} width={560} gap={14}>
+        {kicker("고르는 기준은", INK, { animate: fadeAt(0.1) })}
+        {display("옷", INK, 220, 0.3)}
+        {body("이번 가을에 입을 니트나 아우터 옆에\n후보 색을 놓아보세요", INK, { animate: fadeAt(1.1) })}
+      </column>
+      <column x={M} y={1480} width={CW + 100} gap={0}>
+        {body("손등 혈관이 아니라, 같은 조명에서 손과 옷에 나란히", "#fffdf9", { animate: fadeAt(1.9) })}
+      </column>
+    </group>,
+    3.4, "criterion");
+
+  // 5. 가진 병부터 2.8s — 크림 판. 디스플레이 「병」 강조색
+  beat(
+    <group name="bottles" width={W} height={H} x={0} y={0}>
+      <media file={s5} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.10, 1.0, 2.8)} />
+      {plate(150, 500)}
+      <column x={M} y={196} width={CW} gap={14}>
+        {kicker("새로 사기 전에", INK, { animate: fadeAt(0.15) })}
+        <row gap={26}>
+          {display("병", ACCENT, 176, 0.3)}
+          <text fontFamily={SERIF} fontWeight={700} fontSize={60} lineHeight={1.22} letterSpacing={-1} color={INK} shadow={GLOW}
+                animate={riseAt(0.7)}>
+            {"부터\n꺼내 보세요"}
+          </text>
+        </row>
+        {body("어두운 붉은색·갈색·짙은 초록이 하나라도 있으면\n이미 가을 갈래에 들어와 있는 색이에요", INK, { animate: fadeAt(1.2) })}
+      </column>
+    </group>,
+    2.8, "bottles");
+
+  // 6. 질감 2.8s — 매트·시럽·마그네틱, 0.93초씩. 크림 판 위 세리프 디스플레이
+  const TEX = [
+    { k: "매트", line: "광택이 적은 마감" },
+    { k: "시럽", line: "손톱이 비치는 투명감" },
+    { k: "마그네틱", line: "결을 한 방향으로" },
+  ];
+  for (const [i, t] of TEX.entries()) {
+    const d = i === 2 ? 0.92 : 0.94;
+    beat(
+      <group name={"tex-" + i} width={W} height={H} x={0} y={0}>
+        <media file={s6[i]} x={0} y={0} width={W} height={H} fit="cover"
+               animate={push(1.0, 1.04, d)} />
+        {plate(150, 420)}
+        <column x={M} y={190} width={CW} gap={10}>
+          {kicker(i === 0 ? "질감이 반이에요" : "같은 색도 마감이 다르면", INK)}
+          {display(t.k, INK, 150, 0, { animate: popAt(0, 0.45) })}
+          {body(t.line, INK, { animate: fadeAt(0.2, 0.3) })}
+        </column>
+      </group>,
+      d, "tex-" + i);
+  }
+
+  // 7. 엔딩 4.2s — 지원. 왼쪽 아래(흰 니트). 세리프 헤드라인, 괘선, CTA
+  beat(
+    <group name="end" width={W} height={H} x={0} y={0}>
+      <media file={c7} trimStart={0.6} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.03, 4.2)} />
+      <column x={M} y={1080} width={600} gap={18}>
+        {kicker("사기 전 체크", ACCENT, { animate: fadeAt(1.2) })}
+        <text fontFamily={SERIF} fontWeight={700} fontSize={96} lineHeight={1.18} letterSpacing={-1} color={INK} shadow={GLOW}
+              animate={riseAt(1.4)}>
+          다섯 가지만
+        </text>
+        {body("이미 가진 색 · 평소 옷과 함께\n같은 조명에서 · 마감 · 램프 호환", INK, { animate: fadeAt(1.9) })}
+        {hair(600, "rgba(47,41,38,0.35)", 2.3)}
+        <text fontFamily={KR} fontWeight={700} fontSize={30} letterSpacing={2} color={ACCENT}
+              animate={fadeAt(2.6)}>
+          FAQ · 전문 → glowmeo.com
+        </text>
+      </column>
+      <text x={M} y={1552} width={CW + 100} fontFamily={KR} fontWeight={400} fontSize={23} color={INK} shadow={GLOW}
+            animate={fadeAt(0.6)}>
+        ⓘ 영상 속 인물은 AI로 생성한 가상 에디터 «지원»입니다
+      </text>
+    </group>,
+    4.2, "end");
+
+  await p.frame(1.6, "renders/p1-open.png");
+  await p.frame(4.6, "renders/p2-claim.png");
+  await p.frame(8.4, "renders/p3-divide.png");
+  await p.frame(11.6, "renders/p4-criterion.png");
+  await p.frame(14.6, "renders/p5-bottles.png");
+  await p.frame(16.4, "renders/p6-tex.png");
+  await p.frame(21.4, "renders/p7-end.png");
+};

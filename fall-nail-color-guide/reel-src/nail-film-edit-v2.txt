@@ -1,0 +1,240 @@
+// glowmeo — 가을 네일 컬러 릴스 약 22초 (9:16) · 화자 지원
+// 정본: reports/STORYBOARD-2026-09-08-과장-가을네일-릴스.md
+// 🔴 렌더는 Chrome 엔진(기본)으로. --engine node 는 한글이 깨진다(9/6 실측).
+const INK = "#2f2926", MUTED = "#756a64", PAPER = "#fffdf9", CANVAS = "#f1ebe4";
+const ACCENT = "#8e3a44", SOFT = "#f0d9dc";
+const KR = "Noto Sans KR";
+const W = 1080, H = 1920, M = 92;
+
+export default async ({ project }) => {
+  const p = await project({ size: "1080x1920", fps: 30, background: PAPER });
+
+  const c1 = await p.add("media/cut1.mp4");
+  const c3 = await p.add("media/cut3.mp4");
+  const c4 = await p.add("media/cut4.mp4");
+  const c7 = await p.add("media/cut7.mp4");
+  const s5 = await p.add("media/cut5.png");
+  const s6 = [await p.add("media/cut6a.png"), await p.add("media/cut6b.png"), await p.add("media/cut6c.png")];
+
+  const scrim = (h) => (
+    <rect x={0} y={H - h} width={W} height={h}
+          fill={{ kind: "linear", angle: 90, stops: [
+            { offset: 0, color: "rgba(47,41,38,0)" },
+            { offset: 0.55, color: "rgba(47,41,38,0.62)" },
+            { offset: 1, color: "rgba(47,41,38,0.86)" } ] }} />
+  );
+  const badge = (t) => (
+    <text x={M} y={H - 96} width={W - M * 2} fontFamily={KR} fontWeight={400}
+          fontSize={26} color="rgba(255,255,255,0.82)"
+          animate={[{ property: "opacity", from: 0, to: 1, at: 0.6, duration: 0.5 }]}>
+      {t}
+    </text>
+  );
+  const push = (from, to, dur) => [{ property: "scale", from, to, duration: dur, easing: "linear" }];
+  const fadeAt = (t, d = 0.45) => [{ property: "opacity", from: 0, to: 1, at: t, duration: d }];
+  const riseAt = (t, d = 0.5) => [
+    { property: "opacity", from: 0, to: 1, at: t, duration: d },
+    { property: "offsetY", from: 28, to: 0, at: t, duration: d, easing: "house" },
+  ];
+
+  let at = 0;
+  const beat = (nodes, dur, name) => { p.compose(nodes, { at, dur, name }); at += dur; };
+
+  // 1. 오프닝 2.8s — 여름 프렌치 손, 푸시인
+  beat(
+    <group name="open" width={W} height={H} x={0} y={0}>
+      <media file={c1} trimStart={1.2} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.05, 2.8)} />
+      {scrim(820)}
+      <column x={M} y={1180} width={W - M * 2} gap={26}>
+        <text fontFamily={KR} fontWeight={700} fontSize={30} letterSpacing={6} color={SOFT}
+              animate={fadeAt(0.25)}>
+          FALL NAIL COLOR
+        </text>
+        <text fontFamily={KR} fontWeight={700} fontSize={104} lineHeight={1.22} color="#fffdf9"
+              motion={{ by: "word", from: { y: 46, opacity: 0 }, overlap: 0.62, duration: 0.72, easing: "house" }}>
+          저장은 했는데,{"\n"}못 고르는 이유
+        </text>
+        <rect x={0} y={0} width={120} height={6} fill={ACCENT} radius={3}
+              animate={[{ property: "scaleX", from: 0, to: 1, at: 1.4, duration: 0.55, easing: "house" }]} />
+      </column>
+    </group>,
+    2.8, "open");
+
+  // 2. 제각각 2.6s — 색 조각 셋이 흩어져 들어온다
+  const chips = [
+    { x: 110, y: 470, rot: -8, fill: "#8e1f2b", t: 0.0 },
+    { x: 430, y: 400, rot: 5, fill: "#7a4a2a", t: 0.15 },
+    { x: 740, y: 520, rot: -3, fill: "#6b7a3a", t: 0.30 },
+  ];
+  beat(
+    <group name="claim" width={W} height={H} x={0} y={0}>
+      <rect x={0} y={0} width={W} height={H} fill={PAPER} />
+      {chips.map((c) => (
+        <rect x={c.x} y={c.y} width={230} height={310} radius={26} fill={c.fill} rotation={c.rot}
+              animate={[
+                { property: "opacity", from: 0, to: 1, at: c.t, duration: 0.4 },
+                { property: "offsetY", from: 160, to: 0, at: c.t, duration: 0.6, easing: "house" },
+              ]} />
+      ))}
+      <column x={M} y={1120} width={W - M * 2} gap={30}>
+        <text fontFamily={KR} fontWeight={700} fontSize={34} letterSpacing={4} color={ACCENT}
+              animate={fadeAt(0.5)}>
+          저장한 걸 다시 보면
+        </text>
+        <text fontFamily={KR} fontWeight={700} fontSize={112} lineHeight={1.2} color={INK}
+              motion={{ by: "word", from: { y: 52, opacity: 0 }, overlap: 0.55, duration: 0.7, easing: "house" }}>
+          색이 다{"\n"}제각각입니다
+        </text>
+      </column>
+    </group>,
+    2.6, "claim");
+
+  // 3. 계열로 나누기 3.6s — 세 손톱 위, 라벨 셋이 차례로
+  const labels = [
+    { name: "붉은 계열", fill: "#8e1f2b", t: 0.4 },
+    { name: "브라운", fill: "#7a4a2a", t: 0.8 },
+    { name: "초록", fill: "#6b7a3a", t: 1.2 },
+  ];
+  beat(
+    <group name="divide" width={W} height={H} x={0} y={0}>
+      <media file={c3} trimStart={0.5} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.03, 3.6)} />
+      {scrim(760)}
+      {labels.map((l, i) => (
+        <group name={"label-" + i} width={276} height={76} x={M + i * 298} y={1270}
+               animate={riseAt(l.t)}>
+          <rect x={0} y={0} width={276} height={76} radius={38} fill="rgba(255,253,249,0.94)" />
+          <rect x={24} y={24} width={28} height={28} radius={14} fill={l.fill} />
+          <text x={68} y={17} width={200} height={44} fontFamily={KR} fontWeight={700}
+                fontSize={32} color={INK}>
+            {l.name}
+          </text>
+        </group>
+      ))}
+      <column x={M} y={1420} width={W - M * 2} gap={16}>
+        <text fontFamily={KR} fontWeight={700} fontSize={84} lineHeight={1.24} color="#fffdf9"
+              animate={riseAt(1.7)}>
+          먼저 계열로 나눕니다
+        </text>
+        <text fontFamily={KR} fontWeight={400} fontSize={36} lineHeight={1.4} color={SOFT}
+              animate={fadeAt(2.2)}>
+          그다음에 밝기와 광택을 비교해요
+        </text>
+      </column>
+    </group>,
+    3.6, "divide");
+
+  // 4. 기준은 옷 3.4s — 니트 위 딥레드, 쓸어내리기
+  beat(
+    <group name="criterion" width={W} height={H} x={0} y={0}>
+      <media file={c4} trimStart={0.3} x={0} y={0} width={W} height={H} fit="cover" />
+      {scrim(760)}
+      <column x={M} y={1300} width={W - M * 2} gap={24}>
+        <text fontFamily={KR} fontWeight={700} fontSize={34} letterSpacing={4} color={SOFT}
+              animate={fadeAt(0.2)}>
+          고르는 기준
+        </text>
+        <text fontFamily={KR} fontWeight={700} fontSize={96} lineHeight={1.22} color="#fffdf9"
+              motion={{ by: "word", from: { y: 40, opacity: 0 }, overlap: 0.6, duration: 0.65, easing: "house" }}>
+          기준은{"\n"}이번 가을에 입을 옷
+        </text>
+        <text fontFamily={KR} fontWeight={400} fontSize={36} lineHeight={1.4} color={SOFT}
+              animate={fadeAt(1.6)}>
+          손등 혈관이 아니라, 같은 조명에서 손과 옷에 나란히
+        </text>
+      </column>
+    </group>,
+    3.4, "criterion");
+
+  // 5. 가진 병부터 2.8s — 스틸, 줌아웃
+  beat(
+    <group name="bottles" width={W} height={H} x={0} y={0}>
+      <media file={s5} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.10, 1.0, 2.8)} />
+      {scrim(800)}
+      <column x={M} y={1240} width={W - M * 2} gap={24}>
+        <text fontFamily={KR} fontWeight={700} fontSize={34} letterSpacing={4} color={SOFT}
+              animate={fadeAt(0.2)}>
+          새로 사기 전에
+        </text>
+        <text fontFamily={KR} fontWeight={700} fontSize={96} lineHeight={1.22} color="#fffdf9"
+              motion={{ by: "word", from: { y: 40, opacity: 0 }, overlap: 0.6, duration: 0.65, easing: "house" }}>
+          갖고 있는 병부터{"\n"}꺼내 보세요
+        </text>
+        <text fontFamily={KR} fontWeight={400} fontSize={36} lineHeight={1.4} color={SOFT}
+              animate={fadeAt(1.3)}>
+          어두운 붉은색·갈색·짙은 초록이 하나라도 있으면{"\n"}이미 가을 갈래에 들어와 있는 색이에요
+        </text>
+      </column>
+    </group>,
+    2.8, "bottles");
+
+  // 6. 질감 2.8s — 매트·시럽·마그네틱, 0.93초씩
+  const TEX = [
+    { k: "매트", line: "광택이 적은 마감" },
+    { k: "시럽", line: "손톱이 비치는 투명감" },
+    { k: "마그네틱", line: "결을 한 방향으로" },
+  ];
+  for (const [i, t] of TEX.entries()) {
+    beat(
+      <group name={"tex-" + i} width={W} height={H} x={0} y={0}>
+        <media file={s6[i]} x={0} y={0} width={W} height={H} fit="cover"
+               animate={push(1.0, 1.04, 0.94)} />
+        {scrim(760)}
+        <column x={M} y={1230} width={W - M * 2} gap={18}>
+          <text fontFamily={KR} fontWeight={400} fontSize={32} lineHeight={1.4} color={SOFT}>
+            같은 색도 마감이 다르면 다른 색처럼 보여요
+          </text>
+          <text fontFamily={KR} fontWeight={700} fontSize={128} lineHeight={1.1} color="#fffdf9"
+                animate={[{ property: "offsetY", from: 40, to: 0, duration: 0.35, easing: "house" },
+                          { property: "opacity", from: 0, to: 1, duration: 0.25 }]}>
+            {t.k}
+          </text>
+          <text fontFamily={KR} fontWeight={400} fontSize={38} lineHeight={1.4} color="#fffdf9"
+                animate={fadeAt(0.25, 0.3)}>
+            {t.line}
+          </text>
+        </column>
+      </group>,
+      i === 2 ? 0.92 : 0.94, "tex-" + i);
+  }
+
+  // 7. 엔딩 4.2s — 지원, 손을 내려 손톱 보여 주기
+  beat(
+    <group name="end" width={W} height={H} x={0} y={0}>
+      <media file={c7} trimStart={0.6} x={0} y={0} width={W} height={H} fit="cover"
+             animate={push(1.0, 1.03, 4.2)} />
+      {scrim(900)}
+      <column x={M} y={1180} width={W - M * 2} gap={22}>
+        <text fontFamily={KR} fontWeight={700} fontSize={34} letterSpacing={4} color={SOFT}
+              animate={fadeAt(1.2)}>
+          사기 전 체크
+        </text>
+        <text fontFamily={KR} fontWeight={700} fontSize={96} lineHeight={1.2} color="#fffdf9"
+              animate={riseAt(1.4)}>
+          다섯 가지만
+        </text>
+        <text fontFamily={KR} fontWeight={400} fontSize={36} lineHeight={1.45} color={SOFT}
+              animate={fadeAt(1.9)}>
+          이미 가진 색 · 평소 옷과 함께 · 같은 조명에서{"\n"}그대로 둘지 마감을 바꿀지 · 베이스·탑·램프 호환
+        </text>
+        <rect x={0} y={0} width={W - M * 2} height={2} fill="rgba(255,255,255,0.35)"
+              animate={[{ property: "scaleX", from: 0, to: 1, at: 2.3, duration: 0.6, easing: "house" }]} />
+        <text fontFamily={KR} fontWeight={700} fontSize={40} color="#fffdf9"
+              animate={fadeAt(2.6)}>
+          FAQ·전문 → glowmeo.com
+        </text>
+      </column>
+      {badge("ⓘ 영상 속 인물은 AI로 생성한 가상 에디터 «지원»입니다")}
+    </group>,
+    4.2, "end");
+
+  await p.frame(1.6, "renders/p1-open.png");
+  await p.frame(4.6, "renders/p2-claim.png");
+  await p.frame(8.4, "renders/p3-divide.png");
+  await p.frame(11.6, "renders/p4-criterion.png");
+  await p.frame(14.6, "renders/p5-bottles.png");
+  await p.frame(16.4, "renders/p6-tex.png");
+  await p.frame(21.4, "renders/p7-end.png");
+};
